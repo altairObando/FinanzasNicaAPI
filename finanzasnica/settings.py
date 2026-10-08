@@ -29,7 +29,7 @@ SECRET_KEY = 'django-key-mj@a!q87468h$5nl&gs=b)_ed6+fh)1$na0!eh@1^=cv)cb8i6'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost','127.0.0.1', 'finanzasnicaapi.onrender.com']
 
 
 # Application definition
