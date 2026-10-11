@@ -11,8 +11,11 @@ from .models import (
     Expense,
     ExpenseInvoice,
     AuthToken,
+    Profile
 )
 
+
+admin.site.register(Profile)
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):

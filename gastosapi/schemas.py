@@ -31,6 +31,13 @@ class UserOut(Schema):
     id: int
     username: str
     email: str
+    name: str
+    surname: str
+    phone: str
+    team_code: str
+    team_name: str
+    other_teams: list[str] 
+    
 
 
 class TeamIn(Schema):

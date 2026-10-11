@@ -1,4 +1,5 @@
 import secrets
+from django.contrib.auth.hashers import make_password, check_password
 from finanzasnica.util import generate_code
 from django.utils.translation import gettext_lazy as _
 from django.db import models
@@ -54,16 +55,33 @@ class Team(BaseModelTime, BaseModelIsActive):
     code = models.CharField( max_length=10, unique=True, editable=False )
     name = models.CharField( max_length=100 )
     description = models.TextField( blank=True, null=True )
+    # number of members allowed... read_only.
     members = models.IntegerField(default=0, null=True)
+    access_key = models.CharField(max_length=255)
     def __str__(self):
-        return self.name
+        return f"{ self.code } - { self.name }"
 
     def save(self, *args , **kwargs):
         if not self.code:
             self.code = generate_code()
             while Team.objects.filter(code=self.code).exists():
                 self.code = generate_code()
+                
+        if not self.pk:
+            self.access_key = make_password(self.access_key)
         super().save(*args, **kwargs)
+
+    def validate_access(self, team_code: str, team_pass: str) -> bool:
+        if not team_code or len(team_code) == 0:
+            raise Exception("Team Code is mandatory")
+        if not team_pass or len(team_pass) == 0:
+            raise Exception("Team pass key is mandatory")
+        # Search team
+        expected_team = Team.objects.get( code = team_code )
+        # compare
+        return check_password(expected_team.access_key, team_pass)
+
+
 
 # BaseCreatedBy example userinstancename.TeamMembers_related
 class TeamMember(BaseModelTime, BaseCreatedBy):
@@ -205,3 +223,11 @@ class AuthToken(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.key[:8]}"
+
+class Profile(BaseModelTime):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='profile', on_delete=models.CASCADE)
+    name = models.CharField(max_length=150, blank=True)
+    surname = models.CharField(max_length=150, blank=True, null=True)
+    phone = models.CharField(max_length=15, blank=True, null=True)
+    accept_terms = models.BooleanField(default=False)
+    
