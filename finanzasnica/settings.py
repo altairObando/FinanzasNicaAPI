@@ -24,12 +24,19 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-key-mj@a!q87468h$5nl&gs=b)_ed6+fh)1$na0!eh@1^=cv)cb8i6'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-key-mj@a!q87468h$5nl&gs=b)_ed6+fh)1$na0!eh@1^=cv)cb8i6')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['localhost','127.0.0.1', 'finanzasnicaapi.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'finanzasnicaapi.onrender.com']
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = [
+    'https://finanzasnicaapi.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 
 # Application definition
@@ -105,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.CommonCommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
