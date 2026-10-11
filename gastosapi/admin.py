@@ -14,8 +14,14 @@ from .models import (
     Profile
 )
 
-
-admin.site.register(Profile)
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "name", "surname", "phone", "accept_terms", "created_at", "updated_at")
+    list_filter = ("accept_terms", "created_at")
+    search_fields = ("user__username", "user__email", "name", "surname", "phone")
+    list_select_related = ("user",)
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ("user__username",)
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
