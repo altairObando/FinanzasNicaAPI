@@ -1,8 +1,9 @@
 from ninja import Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
-
-from ..models import Team, TeamMember
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from ..models import Team, TeamMember, Profile
 from ..permissions import (
     apply_patch,
     get_or_404,
@@ -18,6 +19,8 @@ from ..schemas import (
     TeamMemberUpdate,
     TeamOut,
     TeamUpdate,
+    StarterTeam,
+    JoinTeam
 )
 
 router = Router(tags=["Teams"])
@@ -41,6 +44,87 @@ def create_team(request, payload: TeamIn):
     )
     refresh_member_count(team)
     return 201, team
+
+User = get_user_model()
+@router.post('/starter_team', response={201: TeamOut})
+def start_new_team(request, payload: StarterTeam):
+    # 1. Definición única y segura del usuario activo
+    user = request.user if request.user and request.user.is_authenticated else request.auth
+    if not user:
+        raise HttpError(401, "No autorizado")
+        
+    # 2. Validación de duplicados
+    if User.objects.filter(email=payload.email).exclude(id=user.id).exists():
+        raise HttpError(400, "Este correo electrónico ya está en uso.")
+    
+    # 3. Operación atómica: Si algo falla aquí adentro, nada se guarda en la BD
+    with transaction.atomic():
+        # Crear el Equipo
+        team = Team.objects.create(
+            name=payload.teamName,
+            description=payload.teamDescription,
+            access_key= payload.teamSecret,
+        )
+        
+        # Crear el Miembro asignando el objeto 'user' unificado
+        TeamMember.objects.create(
+            team=team,
+            member=user,       # <-- Corregido de request.auth a user
+            created_by=user,   # <-- Corregido de request.auth a user
+            is_team_owner=True,
+        )
+        
+        # Actualizar el Perfil usando 'user'
+        usrProfile = Profile.objects.get(user=user) # <-- Corregido de request.auth a user
+        usrProfile.name = payload.name
+        usrProfile.surname = payload.surname
+        usrProfile.phone = payload.phone
+        usrProfile.save()
+        
+        # Actualizar los datos del Usuario principal
+        user.email = payload.email
+        user.save()
+        
+        # Conteo de miembros
+        refresh_member_count(team)
+        team.access_key = None
+        
+    return 201, team
+
+@router.post('/join', response={ 201: dict })
+def join_to_team(request, payload: JoinTeam):
+    with transaction.atomic():
+        expected_team = Team.objects.select_for_update().filter(
+            code=payload.teamCode
+        ).first()
+        if expected_team is None or not payload.teamPass:
+            raise HttpError(404, "Equipo no encontrado")
+
+        if not expected_team.validate_access(
+            team_code=payload.teamCode,
+            team_pass=payload.teamPass,
+        ):
+            raise HttpError(404, "Equipo no encontrado")
+
+        if TeamMember.objects.filter(
+            team=expected_team,
+            member=request.auth,
+        ).exists():
+            raise HttpError(400, "El usuario ya es miembro de este equipo")
+
+        TeamMember.objects.create(
+            team=expected_team,
+            member=request.auth,
+            created_by=request.auth,
+            is_team_owner=False,
+        )
+        refresh_member_count(expected_team)
+
+    return 201, {
+        "msg": f"Se unió al equipo {expected_team.name}",
+        "teamName": expected_team.name,
+        "teamCode": expected_team.code,
+    }
 
 
 @router.get("/{id}", response=TeamOut)

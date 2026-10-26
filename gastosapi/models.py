@@ -79,7 +79,7 @@ class Team(BaseModelTime, BaseModelIsActive):
         # Search team
         expected_team = Team.objects.get( code = team_code )
         # compare
-        return check_password(expected_team.access_key, team_pass)
+        return check_password(team_pass, expected_team.access_key)
 
 
 

@@ -38,6 +38,21 @@ class UserOut(Schema):
     team_name: str
     other_teams: list[str] 
     
+class StarterTeam(Schema):
+    # Team
+    teamName: str
+    teamDescription: str
+    teamSecret: str
+    # Profile
+    name: str
+    surname: str
+    phone: str
+    email: str
+
+
+class JoinTeam(Schema):
+    teamCode: str
+    teamPass: str
 
 
 class TeamIn(Schema):
