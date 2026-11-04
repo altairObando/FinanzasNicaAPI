@@ -26,7 +26,6 @@ class LoginIn(Schema):
 class TokenOut(Schema):
     token: str
 
-
 class UserOut(Schema):
     id: int
     username: str
@@ -36,7 +35,8 @@ class UserOut(Schema):
     phone: str
     team_code: str
     team_name: str
-    other_teams: list[str] 
+    other_teams: list[str]
+    members: int
     
 class StarterTeam(Schema):
     # Team
@@ -69,7 +69,7 @@ class TeamUpdate(Schema):
 class TeamOut(ModelSchema):
     class Meta:
         model = Team
-        fields = "__all__"
+        exclude = ['access_key']
 
 
 class TeamMemberIn(Schema):
@@ -89,6 +89,10 @@ class TeamMemberOut(ModelSchema):
         model = TeamMember
         fields = "__all__"
 
+class TeamMemberItem(Schema):
+    id: int
+    name: str
+    is_owner: bool
 
 class CategoryIn(Schema):
     team_id: int
@@ -113,6 +117,12 @@ class CategoryOut(ModelSchema):
     class Meta:
         model = Category
         fields = "__all__"
+
+class CategorySummary(Schema):
+    total: int
+    income: int
+    expense: int
+    items: list[CategoryOut]
 
 
 class AccountIn(Schema):

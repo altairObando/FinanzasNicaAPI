@@ -6,6 +6,11 @@ from .models import Team, TeamMember
 def team_ids_for(user):
     return TeamMember.objects.filter(member=user).values_list("team_id", flat=True)
 
+def get_team_id_for(user, code):
+    team = Team.objects.filter(code=code, team_members__member=user).first()
+    if not team:
+        raise HttpError(404, "Equipo no encontrado")
+    return team.pk
 
 def require_team_member(user, team_id: int) -> Team:
     team = Team.objects.filter(pk=team_id, team_members__member=user).first()

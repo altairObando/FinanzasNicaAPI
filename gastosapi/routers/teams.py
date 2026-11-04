@@ -17,6 +17,7 @@ from ..schemas import (
     TeamMemberIn,
     TeamMemberOut,
     TeamMemberUpdate,
+    TeamMemberItem,
     TeamOut,
     TeamUpdate,
     StarterTeam,
@@ -69,13 +70,13 @@ def start_new_team(request, payload: StarterTeam):
         # Crear el Miembro asignando el objeto 'user' unificado
         TeamMember.objects.create(
             team=team,
-            member=user,       # <-- Corregido de request.auth a user
-            created_by=user,   # <-- Corregido de request.auth a user
+            member=user,
+            created_by=user,   
             is_team_owner=True,
         )
         
         # Actualizar el Perfil usando 'user'
-        usrProfile = Profile.objects.get(user=user) # <-- Corregido de request.auth a user
+        usrProfile = Profile.objects.get(user=user) 
         usrProfile.name = payload.name
         usrProfile.surname = payload.surname
         usrProfile.phone = payload.phone
@@ -91,10 +92,12 @@ def start_new_team(request, payload: StarterTeam):
         
     return 201, team
 
-@router.post('/join', response={ 201: dict })
+@router.post('/join', response={ 201: TeamOut })
 def join_to_team(request, payload: JoinTeam):
     with transaction.atomic():
         expected_team = Team.objects.select_for_update().filter(
+            is_active=True
+        ).filter(
             code=payload.teamCode
         ).first()
         if expected_team is None or not payload.teamPass:
@@ -120,11 +123,7 @@ def join_to_team(request, payload: JoinTeam):
         )
         refresh_member_count(expected_team)
 
-    return 201, {
-        "msg": f"Se unió al equipo {expected_team.name}",
-        "teamName": expected_team.name,
-        "teamCode": expected_team.code,
-    }
+    return 201, expected_team
 
 
 @router.get("/{id}", response=TeamOut)
@@ -155,6 +154,26 @@ def list_members(request, team_id: int | None = None):
         require_team_member(request.auth, team_id)
         qs = qs.filter(team_id=team_id)
     return qs
+
+@members_router.get('/getByTeamCode', response=list[TeamMemberItem])
+def get_members_by_code(request, team_code: str):
+    user_membership = TeamMember.objects.filter(
+        member=request.auth,
+        team__code=team_code,
+        team__pk__in=team_ids_for(request.auth)
+    ).select_related('team').first()
+    if not user_membership:
+        return []
+    miembros = (
+        TeamMember.objects.filter(team=user_membership.team)
+        .select_related('member')
+    )
+    return [ TeamMemberItem(
+        id=teamMember.member_id, 
+        name=f"{teamMember.member.first_name} {teamMember.member.last_name}".strip() or teamMember.member.username,
+        is_owner=teamMember.is_team_owner
+    ) for teamMember in miembros ]
+    
 
 
 @members_router.post("/", response={201: TeamMemberOut})

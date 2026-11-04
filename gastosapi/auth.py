@@ -42,7 +42,6 @@ def me(request):
     teams = TeamMember.objects.filter(member=user)
     owner = teams.filter(is_team_owner=True).first()
     other_teams = teams.filter(is_team_owner=False).select_related("team")
-    
 
     return UserOut(
         id = user.id, 
@@ -53,5 +52,6 @@ def me(request):
         phone = profile.phone if profile is not None else '',
         team_code = owner.team.code if owner is not None else '',
         team_name = owner.team.name if owner is not None else '',
-        other_teams=[membership.team.code for membership in other_teams]
+        other_teams=[membership.team.code for membership in other_teams],
+        members= owner.team.members if owner is not None else 0
     )

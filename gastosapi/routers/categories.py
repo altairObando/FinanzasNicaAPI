@@ -1,9 +1,9 @@
 from ninja import Router
 from ninja.pagination import paginate
 
-from ..models import Category
-from ..permissions import apply_patch, get_or_404, require_team_member, team_ids_for
-from ..schemas import CategoryIn, CategoryOut, CategoryUpdate
+from ..models import Category, CategoryType
+from ..permissions import apply_patch, get_or_404, require_team_member, team_ids_for, get_team_id_for
+from ..schemas import CategoryIn, CategoryOut, CategoryUpdate, CategorySummary
 
 router = Router(tags=["Categories"])
 
@@ -16,6 +16,21 @@ def list_categories(request, team_id: int | None = None):
         require_team_member(request.auth, team_id)
         qs = qs.filter(team_id=team_id)
     return qs
+
+@router.get('/summary',response=CategorySummary)
+def get_summary(request, team_code: str | None = None):
+    result = {"total":0,"income": 0, "expense": 0, "items": [] }
+    qs = Category.objects.filter(team_id__in=team_ids_for(request.auth),is_active=True)
+    if team_code is not None:
+        qs = qs.filter(team_id=get_team_id_for(request.auth, team_code))
+    result['total'] = qs.count()
+    result['income'] = qs.filter(type=CategoryType.INCOME).count()
+    result['expense'] = qs.filter(type=CategoryType.EXPENSE).count()
+    result['items'] = qs[:4]
+
+    return CategorySummary( total=result['total'], expense=result['expense'], income=result['income'], items=result['items']  )
+
+
 
 
 @router.post("/", response={201: CategoryOut})
