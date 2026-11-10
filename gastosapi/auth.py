@@ -50,6 +50,7 @@ def me(request):
         name = profile.name if profile is not None else  '',
         surname = profile.surname if profile is not None else '',
         phone = profile.phone if profile is not None else '',
+        team_id= owner.team.pk,
         team_code = owner.team.code if owner is not None else '',
         team_name = owner.team.name if owner is not None else '',
         other_teams=[membership.team.code for membership in other_teams],

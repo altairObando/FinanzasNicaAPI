@@ -33,6 +33,7 @@ class UserOut(Schema):
     name: str
     surname: str
     phone: str
+    team_id: int
     team_code: str
     team_name: str
     other_teams: list[str]

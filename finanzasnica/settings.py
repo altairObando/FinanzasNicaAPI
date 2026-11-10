@@ -27,13 +27,14 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-key-mj@a!q87468h$5nl&gs=b)_ed6+fh)1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'finanzasnicaapi.onrender.com']
+ALLOWED_HOSTS = ['192.168.1.6','localhost', '127.0.0.1', 'finanzasnicaapi.onrender.com']
 
 # CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
     'https://finanzasnicaapi.onrender.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'http://192.168.1.6:8000',
 ]
 
 
