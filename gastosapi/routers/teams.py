@@ -11,6 +11,7 @@ from ..permissions import (
     require_team_member,
     require_team_owner,
     team_ids_for,
+    get_team_for,
 )
 from ..schemas import (
     TeamIn,
@@ -125,6 +126,9 @@ def join_to_team(request, payload: JoinTeam):
 
     return 201, expected_team
 
+@router.post('/get_by_code', response={ 200: TeamOut })
+def get_by_code(request, team_code: str):
+    return 200, get_team_for(user=request.auth, code=team_code)
 
 @router.get("/{id}", response=TeamOut)
 def get_team(request, id: int):
