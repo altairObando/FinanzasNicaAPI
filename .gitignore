@@ -86,5 +86,11 @@ __pycache__/
 local_settings.py
 
 .env
+.env.*
+!.env.example
 .venv
 db.sqlite3
+
+# Artefactos generados por collectstatic / subidas locales
+api/static/
+api/media/

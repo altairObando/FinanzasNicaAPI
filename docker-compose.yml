@@ -1,0 +1,47 @@
+services:
+  django:
+    build: ./api
+    env_file:
+      - .env
+    container_name: django_api
+    volumes:
+      - media_data:/app/media        # Volumen para archivos subidos
+      - static_data:/app/static      # Volumen para archivos estáticos
+    expose:
+      - "8000"
+    healthcheck:
+      # Gunicorn solo escucha cuando terminan las migraciones y collectstatic
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000), 3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # 🌐 Contenedor de Nginx
+  nginx:
+    build: ./nginx
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - media_data:/var/www/media:ro # Solo lectura (seguridad)
+      - static_data:/app/static:ro
+    depends_on:
+      django:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+# Volúmenes compartidos entre contenedores
+volumes:
+  media_data:
+  static_data:
+
+# Red interna para que se comuniquen por nombre
+networks:
+  app_network:
+    driver: bridge
