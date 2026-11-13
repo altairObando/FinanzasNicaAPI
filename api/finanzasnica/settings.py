@@ -15,7 +15,10 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# En local el .env puede estar en api/ o en la raíz del repo (donde lo lee Docker Compose).
+# load_dotenv no sobreescribe variables ya definidas.
 load_dotenv(BASE_DIR / '.env')
+load_dotenv(BASE_DIR.parent / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,15 +30,10 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-key-mj@a!q87468h$5nl&gs=b)_ed6+fh)1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['192.168.1.6','localhost', '127.0.0.1', 'finanzasnicaapi.onrender.com']
+ALLOWED_HOSTS = [h for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h]
 
 # CSRF Trusted Origins
-CSRF_TRUSTED_ORIGINS = [
-    'https://finanzasnicaapi.onrender.com',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'http://192.168.1.6:8000',
-]
+CSRF_TRUSTED_ORIGINS = [o for o in os.getenv('TRUSTED_ORIGINS', '').split(',') if o]
 
 
 # Application definition
@@ -111,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonCommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
@@ -134,8 +132,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
-MEDIA_URL = 'media/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
