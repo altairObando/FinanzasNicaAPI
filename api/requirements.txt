@@ -2,7 +2,8 @@ annotated-types==0.8.0
 asgiref==3.12.1
 Django==6.1.1
 django-ninja==1.7.1
-psycopg2==2.9.13
+gunicorn==27.0.1
+psycopg2-binary==2.9.13
 pydantic==2.13.5
 pydantic_core==2.46.5
 python-dotenv==1.2.4

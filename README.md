@@ -2,22 +2,57 @@
 
 API REST para gestionar gastos compartidos por equipos: cuentas, categorías, presupuestos, créditos y facturas.
 
-Stack: **Django 6.1**, **Django Ninja**, **PostgreSQL**.
+Stack: **Django 6.1**, **Django Ninja**, **PostgreSQL**, **Docker + Nginx**.
 
 ## Requisitos
 
-- Python 3.12+
-- PostgreSQL
+- Docker y Docker Compose (recomendado), o
+- Python 3.12+ y PostgreSQL
 
-## Instalación
+## Opción A: Docker (recomendado)
+
+El stack levanta dos contenedores:
+
+| Contenedor | Función |
+|---|---|
+| `django_api` | Gunicorn sirviendo la API (puerto interno 8000) |
+| `nginx_proxy` | Publica el puerto 80, sirve `/static/` y `/media/` y proxea el resto a Django |
+
+```bash
+cp .env.example .env    # completa DB_*, SECRET_KEY, ALLOWED_HOSTS y TRUSTED_ORIGINS
+docker compose up -d --build
+```
+
+Al arrancar, el contenedor de Django aplica las migraciones (`migrate`) y genera los
+estáticos (`collectstatic`) antes de iniciar Gunicorn.
+
+- API: http://localhost/api/
+- Admin: http://localhost/admin/
+- Docs (Swagger): http://localhost/api/docs
+
+Los archivos estáticos y los subidos por los usuarios se guardan en los volúmenes
+`static_data` y `media_data`, compartidos con Nginx (que los monta en solo lectura).
+El código vive en `api/`, por lo que los comandos locales se ejecutan desde ahí.
+
+Comandos útiles:
+
+```bash
+docker compose logs -f django     # logs de la aplicación
+docker compose exec django python manage.py createsuperuser
+docker compose exec django python manage.py migrate
+docker compose down               # detener el stack
+docker compose down -v            # detener y borrar volúmenes (¡elimina media y static!)
+```
+
+## Opción B: Local
 
 ```bash
 python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r api/requirements.txt
 ```
 
-Crea un archivo `.env` en la raíz del proyecto:
+Crea un archivo `.env` en la raíz del proyecto (ver `.env.example`):
 
 ```env
 DB_ENGINE=django.db.backends.postgresql
@@ -26,11 +61,16 @@ DB_USER=
 DB_PASSWORD=
 DB_HOST=
 DB_PORT=5432
+SECRET_KEY=
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+TRUSTED_ORIGINS=http://localhost,http://127.0.0.1
 ```
 
 Aplica migraciones y crea un usuario:
 
 ```bash
+cd api
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
@@ -38,12 +78,12 @@ python manage.py runserver
 
 ## URLs
 
-| Recurso | URL |
-|---|---|
-| Admin | http://127.0.0.1:8000/admin/ |
-| API | http://127.0.0.1:8000/api/ |
-| Docs (Swagger) | http://127.0.0.1:8000/api/docs |
-| OpenAPI JSON | http://127.0.0.1:8000/api/openapi.json |
+| Recurso | URL (Docker) | URL (local) |
+|---|---|---|
+| Admin | http://localhost/admin/ | http://127.0.0.1:8000/admin/ |
+| API | http://localhost/api/ | http://127.0.0.1:8000/api/ |
+| Docs (Swagger) | http://localhost/api/docs | http://127.0.0.1:8000/api/docs |
+| OpenAPI JSON | http://localhost/api/openapi.json | http://127.0.0.1:8000/api/openapi.json |
 
 ## Autenticación
 
@@ -101,4 +141,6 @@ Al crear un gasto se genera un movimiento de cuenta. Si está ligado a una cuota
 
 ## App
 
-La lógica vive en `gastosapi/` (`models`, `api`, `routers`, `schemas`, `auth`). El proyecto Django está en `finanzasnica/`.
+La lógica vive en `api/gastosapi/` (`models`, `api`, `routers`, `schemas`, `auth`). El proyecto Django está en `api/finanzasnica/` y `api/manage.py` es el punto de entrada.
+
+Los archivos de facturas se guardan en `MEDIA_ROOT` (`/app/media` en Docker) y se sirven en `/media/`; los estáticos de Django se recolectan en `/app/static` y se sirven en `/static/`.
