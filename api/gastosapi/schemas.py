@@ -161,6 +161,19 @@ class AccountOut(ModelSchema):
         return obj.balance()
 
 
+class AccountSummary(Schema):
+    name: str | None = None
+    description: str | None = None
+    currency: str | None = None
+    total: Decimal
+
+
+class ExchangeRate(Schema):
+    date: str
+    base: str
+    quote: str
+    rate: Decimal
+
 class AccountMovementIn(Schema):
     account_id: int
     amount: Decimal
